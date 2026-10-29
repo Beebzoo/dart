@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#151a3a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>DART</title>
+<link rel="manifest" href="app/manifest.webmanifest">
+<link rel="icon" href="app/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="app/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow:wght@500;600;700;800&family=Barlow+Condensed:wght@700&family=Permanent+Marker&display=swap">
+<link rel="stylesheet" href="app/style.css">
+<link rel="stylesheet" href="app/arena.css">
+<link rel="stylesheet" href="app/match.css">
+</head>
+<body>
+<div class="shell">
+  <main id="app"></main>
+  <nav class="tabs" id="tabs">
+    <span class="tab-ind" aria-hidden="true"></span>
+    <a href="#spelen" data-tab="spelen"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg></i><span>Play</span></a>
+    <a href="#stand" data-tab="stand"><i><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1.5A3.5 3.5 0 0 0 8 11M17 6h2.5v1.5A3.5 3.5 0 0 1 16 11"/></svg></i><span>Table</span></a>
+    <a href="#ik" data-tab="ik"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></svg></i><span>Me</span></a>
+  </nav>
+</div>
+<script src="app/store.js"></script>
+<script src="app/sfx.js"></script>
+<script src="app/board.js"></script>
+<script src="app/checkout.js"></script>
+<script src="app/questions.js"></script>
+<script src="app/quiz.js"></script>
+<script src="app/co-game.js"></script>
+<script src="app/hand.js"></script>
+<script src="app/arena.js"></script>
+<script src="app/match.js"></script>
+<script src="app/fx.js"></script>
+<script src="app/app.js"></script>
+</body>
+</html>
