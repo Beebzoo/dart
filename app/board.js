@@ -80,14 +80,21 @@
     return el;
   }
   /* fly a dart in from the oche (big and low) to (x, y): ~ms long, then `done` (always
-     called, on a timer, even when the page isn't painting). bounce: it hits the wire and
-     drops out of the board afterwards. */
+     called, on a timer, even when the page isn't painting). opts:
+       bounce   it hits the wire (or another dart) and drops out of the board afterwards
+       deflect  [x2, y2]: it touches (x, y) first (another dart's barrel or flight), then
+                kicks to (x2, y2) in ~120 ms; done comes after the kick
+       robin    { x, y, rot } of a dart in the board: it lodges in the back of that dart
+       stop     hit-stop: the dart freezes this many ms before it quivers (a treble, the bull)
+       slow     ease in and out (the slow-motion third dart of a 180 chase) */
   function throwAt(svgEl, x, y, i, opts, done){
     opts = opts || {};
     const el = dartEl(svgEl, i, "fly"); if(!el){ done && done(); return null; }
-    const ms = opts.ms || 230, rot = lean(x), sc = 1.5, x0 = x * 0.35, y0 = 330, t0 = performance.now();
+    const host = opts.robin;
+    if(host){ const L = 58 * 1.5, a = rad(host.rot); x = host.x + L * Math.sin(a); y = host.y - L * Math.cos(a); }
+    const ms = opts.ms || 230, rot = host ? host.rot + 4 : lean(x), sc = host ? 1.35 : 1.5, x0 = x * 0.35, y0 = 330, t0 = performance.now();
     let landed = false;
-    const ease = t => 1 - Math.pow(1 - t, 3);
+    const ease = opts.slow ? (t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2) : (t => 1 - Math.pow(1 - t, 3));
     const step = now => {
       if(landed || !el.isConnected) return;
       const t = Math.min(1, (now - t0) / ms), e = ease(t);
@@ -97,14 +104,18 @@
       if(t < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
+    el._pos = { x, y, rot };
     setTimeout(() => {
       landed = true; el.style.opacity = "";
       el.setAttribute("transform", tf(x, y, rot, sc));
       /* the quiver after it sticks */
-      const q0 = performance.now(), quiver = now => {
-        if(!el.isConnected || el.classList.contains("out")) return;
-        const t = (now - q0) / 320; if(t >= 1){ el.setAttribute("transform", tf(x, y, rot, sc)); return; }
-        el.setAttribute("transform", tf(x, y, rot + Math.sin(t * 22) * 4 * (1 - t), sc));
+      const quiv = (qx, qy, amp) => {
+        const q0 = performance.now(), quiver = now => {
+          if(!el.isConnected || el.classList.contains("out")) return;
+          const t = (now - q0) / 320; if(t >= 1){ el.setAttribute("transform", tf(qx, qy, rot, sc)); return; }
+          el.setAttribute("transform", tf(qx, qy, rot + Math.sin(t * 22) * amp * (1 - t), sc));
+          requestAnimationFrame(quiver);
+        };
         requestAnimationFrame(quiver);
       };
       if(opts.bounce){
@@ -122,8 +133,22 @@
           };
           requestAnimationFrame(fall);
         }, 120);
-      } else requestAnimationFrame(quiver);
-      done && done();
+        done && done();
+      } else if(opts.deflect){
+        /* glances off: a quick kick from the first touch to where it sticks */
+        const [x2, y2] = opts.deflect, k0 = performance.now(), kick = now => {
+          if(!el.isConnected) return;
+          const t = Math.min(1, (now - k0) / 120), e = 1 - Math.pow(1 - t, 2);
+          el.setAttribute("transform", tf(x + (x2 - x) * e, y + (y2 - y) * e, rot + 18 * Math.sin(Math.PI * t), sc));
+          if(t < 1) requestAnimationFrame(kick);
+        };
+        requestAnimationFrame(kick);
+        el._pos = { x: x2, y: y2, rot };
+        setTimeout(() => { if(el.isConnected) el.setAttribute("transform", tf(x2, y2, rot, sc)); quiv(x2, y2, 6); done && done(); }, 125);
+      } else {
+        if(opts.stop) setTimeout(() => quiv(x, y, host ? 2 : 4), opts.stop); else quiv(x, y, host ? 2 : 4);
+        done && done();
+      }
     }, ms);
     return el;
   }

@@ -62,3 +62,93 @@
 /* pops and the loupe may poke past the board's sides: never a sideways scroll */
 /* clip score pops at the screen edge, not at the column (the board runs to the edges on a phone) */
 .screen.s-match{ overflow-x: clip; }
+
+/* ---------- the breathing hand: a ring around the crosshair swells and settles; at the
+   still point it tightens and turns gold (GOOD), its core is PERFECT ---------- */
+.board .aim .cross circle.breath{ display: none; fill: none; stroke: #ffffffa0; stroke-width: 1.3; stroke-dasharray: 3 2.4; transition: stroke .08s; }
+.board.lp .aim .cross circle.breath{ stroke-width: .45; stroke-dasharray: 1 .8; }
+.board .aim.breathe .cross circle.breath{ display: inline; }
+.board .aim.win1 .cross circle.breath{ stroke: var(--gold); stroke-dasharray: none; }
+.board .aim.win2 .cross circle.breath{ stroke: #fff3b0; stroke-dasharray: none; stroke-width: 2.4; filter: drop-shadow(0 0 3px #ffc94a) drop-shadow(0 0 6px #ffc94a); }
+.board.lp .aim.win2 .cross circle.breath{ stroke-width: .8; filter: drop-shadow(0 0 1px #ffc94a); }
+.board .aim.win2 .cross .c0{ fill: var(--gold); }
+.board .aim.tired .cross circle.breath{ stroke: #ff8a93; }
+/* aim point on another dart: blocked */
+.board .aim.blocked .cross circle, .board .aim.blocked .cross line{ stroke: #ff6b77; }
+.lp-l.blk{ background: #8c1420e6; }
+/* nerves on a double: a reddish crosshair; on fire: gold */
+.board .aim.nerves .cross line{ stroke: #ffb3b9; }
+.board .aim.fire .cross line, .board .aim.fire .cross circle:first-child{ stroke: var(--gold); }
+.handtag .nv{ margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: #d22a37; color: #fff; }
+.handtag .fi{ margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: linear-gradient(90deg, #ff8a3a, #f2c14e); color: #1a1008; }
+.h4{ color: #9fdcff; }
+.handtag.h4{ background: #4da3ff33; color: #cfeeff; }
+
+/* the score bug: momentum pips, "last" never truncated, on fire glow */
+#app.s-match .sbp .sbx .mpips{ flex: none; display: inline-flex; gap: 2px; }
+#app.s-match .sbp .sbx .mpips b{ width: 6px; height: 9px; border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%; background: linear-gradient(0deg, #ff6a2a, #ffd36b); box-shadow: 0 0 4px #ff8a3a; }
+#app.s-match .sbp .sbx .ag{ overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+#app.s-match .sbp .sbx .last{ flex: none; font-weight: 800; color: #d8d6e6; }
+#app.s-match .sbp.fire .nm{ text-shadow: 0 0 10px #ff8a3a; }
+
+/* the chyron over the board: for the maximum / match dart / nine-dart watch */
+.m-chy{ position: absolute; left: 50%; top: 2px; z-index: 21; transform: translate(-50%, -8px); opacity: 0; pointer-events: none; white-space: nowrap;
+  padding: 4px 14px; border-radius: 4px; font: 400 18px/1.1 var(--f-head); letter-spacing: .08em; text-transform: uppercase;
+  background: linear-gradient(180deg, #ffe08a, #f2c14e 55%, #d9a228); color: #16110a; box-shadow: 0 6px 18px #000a; transition: opacity .2s, transform .25s; }
+.m-chy.show{ opacity: 1; transform: translate(-50%, 0); animation: chybeat .75s ease-in-out infinite; }
+.m-chy.match{ background: linear-gradient(180deg, #ff5a66, #d22a37); color: #fff; }
+.m-chy.nine{ background: linear-gradient(180deg, #8fd0ff, #3c8fe0); color: #06121f; animation: none; }
+@keyframes chybeat{ 0%, 100%{ box-shadow: 0 6px 18px #000a; } 15%{ box-shadow: 0 6px 18px #000a, 0 0 0 4px #ffc94a55; } }
+/* the slow-motion zoom on the bed for the third dart (transform-origin set from match.js) */
+.m-board .board.big{ transition: transform .65s cubic-bezier(.45, 0, .55, 1); }
+.m-board.zoom .board.big{ transform: scale(1.35); }
+.m-board.unzoom .board.big{ transition-duration: .3s; }
+@media (prefers-reduced-motion: reduce){ .m-board.zoom .board.big{ transform: none; } .m-chy.show{ animation: none; } }
+
+/* score pops: the clean-release tag, off a dart, Robin Hood */
+.m-pop .tag{ display: inline-block; margin-top: 3px; padding: 1px 7px; border-radius: 3px; font: 800 11px/1.3 var(--f-body); font-style: normal; letter-spacing: .14em; }
+.m-pop .tag.t2{ background: linear-gradient(90deg, #ffe08a, #f2c14e); color: #1a1008; box-shadow: 0 0 12px #ffc94a; }
+.m-pop .tag.t1{ background: #ffffffd9; color: #1a1410; }
+.m-pop span.dfl{ color: #ffb3b9; font-size: 12px; }
+.m-pop.robin b{ color: #9be7b0; font-size: 30px; }
+
+/* pick your question (one tap) */
+.sheet.choose .tiers{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.sheet .tier{ display: grid; gap: 4px; padding: 14px 6px 12px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); text-align: center; color: var(--cream); }
+.sheet .tier b{ font: 400 22px/1 var(--f-head); letter-spacing: .04em; text-transform: uppercase; }
+.sheet .tier small{ font: 600 11.5px/1.25 var(--f-body); color: var(--dim); }
+.sheet .tier.t-easy b{ color: var(--gold); } .sheet .tier.t-medium b{ color: #8fe0b4; } .sheet .tier.t-hard b{ color: #9fdcff; }
+.sheet .tier.last{ border-color: var(--gold); box-shadow: 0 0 0 2px #f2c14e55; }
+.sheet .tier:active{ transform: scale(.96); }
+.sheet .lbl.tq{ margin-top: 14px; }
+.sheet .lbl .tb{ display: inline-block; margin-right: 8px; padding: 1px 7px; border-radius: 3px; font: 800 10.5px/1.4 var(--f-body); font-style: normal; letter-spacing: .12em; text-transform: uppercase; background: #ffffff1c; vertical-align: 1px; }
+.sheet .lbl .tb.t-easy{ color: var(--gold); } .sheet .lbl .tb.t-medium{ color: #8fe0b4; } .sheet .lbl .tb.t-hard{ color: #9fdcff; background: #4da3ff2a; }
+/* the question clock freezes where it was: green for right, red for wrong */
+.clock.ok i{ background: linear-gradient(90deg, #19985a, #8fe0b4); box-shadow: 0 0 10px #19985a88; }
+.clock.no i{ background: linear-gradient(90deg, #d22a37, #ff8a93); box-shadow: none; }
+
+/* the opponent picker: grouped by level */
+.opps .opp-lv{ margin: 12px 0 6px; font: 800 11px var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.opps .opp-lv:first-child{ margin-top: 0; }
+.opp-g{ display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 8px; }
+.opp{ display: grid; gap: 3px; align-content: start; text-align: left; padding: 10px 11px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--cream); min-width: 0; }
+.opp .o-n{ display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.opp .o-n b{ font: 400 19px/1.05 var(--f-head); letter-spacing: .03em; text-transform: uppercase; }
+.opp .o-n i{ font: 800 10px var(--f-body); font-style: normal; letter-spacing: .1em; color: var(--dim); }
+.opp small{ font: 700 12px var(--f-body); color: var(--dim); }
+.opp em{ font: 500 12px/1.3 var(--f-body); font-style: normal; color: #cfcbe0; }
+.opp.on{ background: linear-gradient(180deg, #fffaf0, #efe2c2); border-color: #fff; color: #1a1410; box-shadow: 0 0 0 2px var(--ac, var(--red)); }
+.opp.on small, .opp.on .o-n i{ color: #6a5b45; } .opp.on em{ color: #3c3226; }
+.opp:active{ transform: scale(.97); }
+
+/* the walk-on card: nickname and the tell */
+.banner.walk .w-nick, .banner.walk .w-tell{ position: relative; z-index: 2; width: fit-content; max-width: min(340px, 92%); margin-left: auto; margin-right: auto; padding: 3px 12px; border-radius: 6px; background: #07081ae0; box-shadow: 0 6px 18px #000a; text-shadow: none; }
+.banner.walk .w-nick{ margin-top: 8px; font: 400 20px var(--f-head); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); }
+.banner.walk .w-tell{ margin-top: 6px; font-size: 14px; line-height: 1.35; color: #d8d6e6; }
+
+/* the end screen: a new personal best */
+.m-pb{ display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 4px 10px; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: linear-gradient(90deg, #f2c14e26, #f2c14e10); border: 1px solid #f2c14e66; animation: in .4s both; }
+.m-pb span{ font: 800 11px var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.m-pb b{ font: 400 20px var(--f-head); text-transform: uppercase; }
+.m-pb em{ font: 400 22px var(--f-chalk); font-style: normal; color: var(--chalk); }

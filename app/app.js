@@ -1,5 +1,5 @@
 /* DART shell: the router, the three tabs (Play, Table, Me) and shared helpers.
-   Routes: #spelen  #quiz  #checkout  #match  #stand  #ik
+   Routes: #spelen  #quiz  #checkout  #match  #stand  #ik  #stats(-player index)
    Every text goes through T(english, dutch); the language is set on Me (default English). */
 (function(D){
   const app = document.getElementById("app"), tabs = document.getElementById("tabs");
@@ -82,13 +82,35 @@
     return () => timers.forEach(clearTimeout);
   }
 
+  /* head-to-head cards between the three friends (from the match log) */
+  function rivals(){
+    const P = D.store.players, out = [];
+    for(let a = 0; a < P.length; a++) for(let b = a + 1; b < P.length; b++){
+      const h = D.progress.h2h(a, b), last = h.list[h.list.length - 1], n = h.list.length;
+      const side = (i, w, lead) => '<span class="pg-rv-p' + (lead ? " lead" : "") + '">' + D.av(i) + "<b>" + esc(P[i]) + '</b><small>' + T("LV ", "LV ") + D.progress.info(i).lv + '</small><em data-count="' + w + '">' + w + "</em></span>";
+      let foot;
+      if(!n) foot = T("No match yet. Pick “A friend” in the 501 Match.", "Nog geen match. Kies “Een vriend” in de 501 Match.");
+      else {
+        const lw = last.w ? a : b;
+        let k = 0; for(let j = n - 1; j >= 0 && !!h.list[j].w === !!last.w; j--) k++;
+        foot = esc(P[lw]) + T(" won the last one ", " won de laatste met ") + (last.w ? last.l[0] + "–" + last.l[1] : last.l[1] + "–" + last.l[0]) + " · " + D.progress.ago(last.t) +
+          (k >= 2 ? "<br><b>" + esc(P[lw]) + T(" has won " + k + " in a row", " won er " + k + " op rij") + "</b>" : "");
+      }
+      const form = h.list.slice(-5).map(e => '<i class="p' + ((e.w ? a : b) % 3) + '" title="' + esc(P[e.w ? a : b]) + '"></i>').join("");
+      out.push('<a class="pg-riv" href="#stats-' + a + '"><div class="pg-rv-top">' + side(a, h.w, h.w > h.l) + '<span class="pg-rv-vs">v</span>' + side(b, h.l, h.l > h.w) + "</div>" +
+        (form ? '<div class="pg-form"><span>' + T("Form", "Vorm") + "</span>" + form + "</div>" : "") + '<p class="pg-rv-f">' + foot + "</p></a>");
+    }
+    return out.join("");
+  }
+
   function stand(el){
     const P = D.store.players, cols = [["m501", T("501 avg", "501 gem.")], ["quiz", "Quiz"], ["co10", "Checkout"], ["coklok", T("Clock", "Klok")]];
     const best = k => Math.max(0, ...P.map((p, i) => (D.store.rec(i, k) || {}).best || 0));
     let rows = "";
     P.forEach((p, i) => {
       const plays = cols.reduce((a, [k]) => a + ((D.store.rec(i, k) || {}).plays || 0), 0);
-      rows += '<tr' + (i === D.store.me ? ' class="me"' : "") + '><th><span class="pl">' + D.av(i) + "<span>" + esc(p) + "<small>" + T(plays + "× played", plays + "× gespeeld") + "</small></span></span></th>" +
+      const lv = D.progress.info(i);
+      rows += '<tr' + (i === D.store.me ? ' class="me"' : "") + '><th><a class="pl" href="#stats-' + i + '">' + D.av(i) + "<span>" + esc(p) + '<small class="pg-lvs"><em>' + T("LV ", "LV ") + lv.lv + "</em>" + esc(lv.title) + "</small></span></a></th>" +
         cols.map(([k]) => { const r = D.store.rec(i, k), v = r ? r.best : 0; return '<td' + (v && v === best(k) ? ' class="top1"' : "") + ">" + (r ? '<span data-count="' + v + '"' + (v % 1 ? ' data-dec="1"' : "") + ">" + v + "</span>" : "–") + "</td>"; }).join("") + "</tr>";
     });
     const me = D.store.me, decks = ["spelregels", "legendes", "modern", "toernooien", "bijnamen", "nederland"];
@@ -98,8 +120,10 @@
       '<div class="chalkboard"><table class="st"><thead><tr><th></th>' + cols.map(c => "<th>" + c[1] + "</th>").join("") + "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
       '<p class="note">' + T("501 avg: your best three-dart average in a match (at least nine darts). Quiz: max 1800 (ten times 180). Checkout: ten scores, max 30. Clock: as many points as you get in 60 seconds.",
         "501 gem.: je beste driepijlsgemiddelde in een match (minstens negen pijlen). Quiz: max 1800 (tien keer 180). Checkout: tien stuks, max 30. Klok: zoveel punten als je haalt in 60 seconden.") + '</p>' +
+      '<h2 class="sub-h">' + T("Rivals", "Rivalen") + '</h2><div class="pg-rivals">' + rivals() + "</div>" +
+      '<a class="pg-statlink" href="#stats-' + D.store.me + '"><span>' + T("Stats, trophies and the heatmap", "Statistieken, prijzen en de heatmap") + "</span><i>›</i></a>" +
       '<h2 class="sub-h">' + esc(D.store.name) + T(", quiz by topic", ", quiz per onderwerp") + '</h2><div class="decks-best">' + mine + "</div>";
-    fx.stagger(el, ".chalkboard, .note, .sub-h", 1);
+    fx.stagger(el, ".chalkboard, .note, .sub-h, .pg-riv, .pg-statlink", 1);
     fx.stagger(el.querySelector(".st tbody"), null, 2);
     fx.stagger(el.querySelector(".decks-best"), null, 6);
     fx.counts(el, { delay: 250 });
@@ -107,15 +131,19 @@
 
   function ik(el){
     const P = D.store.players, lang = D.store.lang;
-    el.innerHTML = D.top() + '<h1 class="pt">' + T("Me", "Ik") + '</h1><h2 class="sub-h">' + T("Who’s throwing?", "Wie gooit er?") + '</h2><div class="players">' +
+    const lv = D.progress.info(D.store.me);
+    el.innerHTML = D.top() + '<h1 class="pt">' + T("Me", "Ik") + '</h1>' +
+      '<a class="pg-mecard" href="#stats-' + D.store.me + '"><span class="pg-lv"><small>LV</small><b>' + lv.lv + '</b></span><span class="pg-who"><b>' + esc(lv.title) + '</b><span class="pg-bar"><i style="width:' + (lv.frac * 100).toFixed(1) + '%"></i></span><small>' + lv.xp + " XP · " + T("stats and trophies", "statistieken en prijzen") + '</small></span><i class="pg-go">›</i></a>' +
+      '<h2 class="sub-h">' + T("Who’s throwing?", "Wie gooit er?") + '</h2><div class="players">' +
       P.map((p, i) => '<button data-i="' + i + '"' + (i === D.store.me ? ' class="on"' : "") + ">" + D.av(i) + "<b>" + esc(p) + "</b><span>" + (i === D.store.me ? T("at the oche", "aan de oche") : T("pick", "kies")) + "</span></button>").join("") +
       '</div><h2 class="sub-h">' + T("Language", "Taal") + '</h2><div class="chips seg' + (lang === "nl" ? " r" : "") + '" id="lang"><button data-v="en"' + (lang === "en" ? ' class="on"' : "") + '>English</button><button data-v="nl"' + (lang === "nl" ? ' class="on"' : "") + '>Nederlands</button></div>' +
       '<h2 class="sub-h">' + T("Names", "Namen") + '</h2><div class="names">' +
       P.map((p, i) => '<label>' + D.av(i) + '<input data-i="' + i + '" value="' + esc(p) + '" maxlength="14" aria-label="' + T("Name player ", "Naam speler ") + (i + 1) + '"></label>').join("") +
       '</div><h2 class="sub-h">' + T("Settings", "Instellingen") + '</h2><label class="toggle"><input type="checkbox" id="snd"' + (D.store.sound ? " checked" : "") + '><span>' + T("Sound and caller", "Geluid en caller") + '</span></label>' +
+      '<button class="pg-test" id="ctest"><svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5V15"/></svg>' + T("Test the caller", "Test de caller") + '<small>' + T("English, like on TV", "Engels, zoals op tv") + "</small></button>" +
       '<p class="note">' + T("Coming soon: logging in, so you see each other’s Worlds bracket and scores on your own phone.", "Binnenkort: inloggen, zodat jullie elkaars WK-schema en scores op je eigen telefoon zien.") + '</p>' +
       '<p class="note dim">DART · ' + T("version 1 · for Martijn, Felix and Ale", "versie 1 · voor Martijn, Felix en Ale") + '</p>';
-    fx.stagger(el, ".players > button, .sub-h, #lang, .names, .toggle", 1);
+    fx.stagger(el, ".pg-mecard, .players > button, .sub-h, #lang, .names, .toggle, .pg-test", 1);
     el.querySelectorAll(".players button").forEach(b => b.onclick = () => { D.store.setMe(+b.dataset.i); D.sfx.thud(); fx.buzz(10); ik(el); el.querySelectorAll(".rise").forEach(x => x.classList.remove("rise")); });
     el.querySelectorAll("#lang button").forEach(b => b.onclick = () => {
       if(b.dataset.v === D.store.lang) return;
@@ -123,7 +151,11 @@
       setTimeout(() => { labels(); ik(el); el.querySelectorAll(".rise").forEach(x => x.classList.remove("rise")); }, fx.calm() ? 0 : 260);
     });
     el.querySelectorAll(".names input").forEach(inp => inp.onchange = () => { D.store.rename(+inp.dataset.i, inp.value); ik(el); el.querySelectorAll(".rise").forEach(x => x.classList.remove("rise")); });
-    el.querySelector("#snd").onchange = e => { D.store.setSound(e.target.checked); if(e.target.checked){ D.sfx.good(); fx.buzz(10); } };
+    el.querySelector("#snd").onchange = e => { D.store.setSound(e.target.checked); if(e.target.checked){ D.sfx.good(); fx.buzz(10); } else D.caller.stop(); };
+    el.querySelector("#ctest").onclick = () => {
+      if(!D.store.sound){ D.store.setSound(true); el.querySelector("#snd").checked = true; }
+      D.sfx.unlock(); D.caller.test(); fx.buzz(10);
+    };
   }
 
   /* the tab bar's words and the page language */
@@ -133,16 +165,18 @@
     document.documentElement.lang = D.store.lang;
   }
 
-  const SCREENS = { spelen, stand, ik, quiz: el => D.quiz(el), checkout: el => D.checkout(el), match: el => D.match(el) };
-  const DEPTH = { spelen: 0, stand: 1, ik: 2, quiz: 3, checkout: 3, match: 3 };
+  const SCREENS = { spelen, stand, ik, stats: el => D.progress.page(el, location.hash.split("-")[1]), quiz: el => D.quiz(el), checkout: el => D.checkout(el), match: el => D.match(el) };
+  const DEPTH = { spelen: 0, stand: 1, ik: 2, stats: 2.5, quiz: 3, checkout: 3, match: 3 };
   let cleanup = null, last = null;
   function route(){
     const raw = location.hash.slice(1).split("-")[0] || "spelen", name = SCREENS[raw] ? raw : "spelen", fn = SCREENS[name];
     if(cleanup){ try { cleanup(); } catch(e){} cleanup = null; }
     const game = name === "quiz" || name === "checkout" || name === "match";
     document.body.classList.toggle("in-game", game);
-    tabs.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.tab === name));
-    const ti = { spelen: 0, stand: 1, ik: 2 }[name];
+    /* the stats page lives under the Table tab */
+    const tab = name === "stats" ? "stand" : name;
+    tabs.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.dataset.tab === tab));
+    const ti = { spelen: 0, stand: 1, ik: 2 }[tab];
     if(ti != null) tabs.style.setProperty("--t", ti);
     const dir = last == null || last === name ? "n" : DEPTH[name] > DEPTH[last] ? "f" : DEPTH[name] < DEPTH[last] ? "b" : "n";
     app.className = "screen s-" + name;
